@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Writing Submission Form</title>
+<!-- =====================================================================
+  Writing Submission Form（不正防止・タイピング練習用 提出フォーム）
+  ---------------------------------------------------------------------
+  ・Google Sites（埋め込みコード）にも GitHub Pages にも、このファイルをそのまま使えます。
+  ・先生が設定するのは、スクリプト冒頭の CONFIG だけです。
+  ・CONFIG.gasUrl が空のままだと、送信せずに動作確認だけできる「プレビュー」になります。
+===================================================================== -->
+<style>
+  :root{
+    --ink:#1a2233; --ink-soft:#5a6478; --line:#d7dced; --paper:#ffffff; --bg:#eef1f7;
+    --chrome:#243056; --chrome-2:#31407a; --accent:#3350c9; --accent-d:#2a44b3;
+    --ok:#1f9d63; --warn:#c9871f; --over:#c0392b;
+    --ok-bg:#e7f6ee; --warn-bg:#fbf1dc; --over-bg:#fbe6e3;
+    --radius:10px;
+    --mono:"SFMono-Regular",ui-monospace,"DejaVu Sans Mono",Menlo,Consolas,monospace;
+    --ui:system-ui,-apple-system,"Segoe UI","Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;
+    --write:"Georgia","Times New Roman",serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:var(--ui);color:var(--ink);background:var(--bg);line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:920px;margin:0 auto;padding:0 16px 48px}
+
+  header{background:linear-gradient(180deg,var(--chrome),var(--chrome-2));color:#fff}
+  .head-inner{max-width:920px;margin:0 auto;padding:10px 16px;
+    display:flex;align-items:center;justify-content:flex-end;gap:12px;flex-wrap:wrap}
+  .head-inner.has-title{justify-content:space-between}
+  .brand{font-weight:700;letter-spacing:.02em;font-size:16px}
+  .brand small{display:block;font-weight:400;opacity:.75;font-size:11px;letter-spacing:.08em}
+  .clock-wrap{display:flex;align-items:center;gap:8px}
+  .clock-label{font-size:12px;opacity:.8}
+  .clock{font-family:var(--mono);font-size:14px;background:rgba(255,255,255,.12);padding:6px 12px;border-radius:8px}
+
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-top:16px}
+  .card h2{margin:0 0 12px;font-size:13px;letter-spacing:.1em;color:var(--ink-soft);font-weight:700}
+
+  .id-grid{display:grid;grid-template-columns:1.3fr 1.2fr 1.3fr;gap:12px}
+  @media(max-width:600px){.id-grid{grid-template-columns:1fr}}
+  .field label{display:block;font-size:12px;color:var(--ink-soft);margin-bottom:5px;font-weight:600}
+  .field input{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;
+    font-size:15px;font-family:var(--ui);color:var(--ink);background:#fbfcff}
+  .field input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+  .field input:disabled{background:#f1f3f8;color:var(--ink-soft)}
+  .note{font-size:12px;color:var(--ink-soft);margin:10px 0 0}
+
+  .toolbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px;
+    border:1px solid var(--line);border-bottom:none;border-radius:var(--radius) var(--radius) 0 0;background:#f4f6fc}
+  .tool{display:inline-flex;align-items:center;gap:6px;cursor:pointer;border:1px solid var(--line);
+    background:#fff;color:var(--ink);padding:7px 12px;border-radius:7px;font-size:13px;font-weight:600;font-family:var(--ui)}
+  .tool:hover{background:#eef2ff;border-color:#b9c3e6}
+  .tool:active{transform:translateY(1px)}
+  .tool:disabled{opacity:.4;cursor:not-allowed}
+  .tool kbd{font-family:var(--mono);font-size:10px;color:var(--ink-soft);background:#eef1f7;
+    border-radius:4px;padding:1px 4px;border:1px solid var(--line)}
+  .tsep{width:1px;align-self:stretch;background:var(--line);margin:2px 4px}
+  .clip-ind{margin-left:auto;font-size:11px;color:var(--ink-soft);font-family:var(--mono)}
+
+  .writer{position:relative}
+  #answer{width:100%;min-height:340px;resize:vertical;display:block;
+    border:1px solid var(--line);border-radius:0 0 var(--radius) var(--radius);
+    padding:18px 18px 46px;font-family:var(--write);font-size:17px;line-height:1.7;color:var(--ink);background:var(--paper)}
+  #answer:focus{outline:2px solid var(--accent);outline-offset:-2px}
+  #answer::selection{background:#cdd8ff}
+
+  .gauge{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:14px;
+    padding:8px 14px;border-top:1px solid var(--line);background:#fbfcff;
+    border-radius:0 0 var(--radius) var(--radius);font-size:13px;color:var(--ink-soft)}
+  .gauge b{font-family:var(--mono);font-weight:700;color:var(--ink);font-size:15px}
+  .gauge .sub b{font-size:13px}
+  .status{font-weight:700;padding:2px 10px;border-radius:20px;font-size:12px}
+  .st-warn{color:var(--warn);background:var(--warn-bg)}
+  .st-ok{color:var(--ok);background:var(--ok-bg)}
+  .st-over{color:var(--over);background:var(--over-bg)}
+  .bar{flex:1;height:7px;border-radius:6px;background:#e6eaf4;overflow:hidden;min-width:70px}
+  .bar > i{display:block;height:100%;width:0;border-radius:6px;background:var(--warn);transition:width .18s,background .18s}
+  .target{font-family:var(--mono);white-space:nowrap}
+  .hidden{display:none !important}
+
+  .watch{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+  .watch-card{flex:1;min-width:140px;text-align:center;background:#f4f6fc;
+    border:1px solid var(--line);border-radius:10px;padding:12px 10px;transition:background .2s,border-color .2s}
+  .watch-card .wlabel{font-size:12px;color:var(--ink-soft);font-weight:600;margin-bottom:4px}
+  .watch-card .wvalue{font-family:var(--mono);font-weight:700;font-size:28px;color:var(--ink);line-height:1.1}
+  .watch-card.alert{background:var(--warn-bg);border-color:#e6c46a}
+  .watch-card.alert .wvalue{color:var(--warn)}
+  .watch-warn{display:none;margin-top:10px;background:var(--warn-bg);border:1px solid #e6c46a;
+    color:#8a5a00;border-radius:10px;padding:11px 14px;font-size:14px;font-weight:700;text-align:center}
+  .watch-warn.show{display:block}
+  .blur-notice{display:none;margin-top:8px;background:var(--warn-bg);border:1px solid #e6c46a;
+    color:#8a5a00;border-radius:10px;padding:11px 14px;font-size:13.5px;line-height:1.7;font-weight:600}
+  .blur-notice.show{display:block}
+  .leave-list{display:none;margin-top:8px;color:#d32020;font-weight:700;font-size:14.5px;line-height:1.8;
+    font-variant-numeric:tabular-nums}
+  .leave-list.show{display:block}
+
+  .actions{display:flex;align-items:center;gap:12px;margin-top:18px;flex-wrap:wrap}
+  .submit{background:var(--accent);color:#fff;border:none;border-radius:9px;padding:13px 26px;
+    font-size:15px;font-weight:700;cursor:pointer;font-family:var(--ui)}
+  .submit:hover{background:var(--accent-d)}
+  .submit:disabled{opacity:.5;cursor:not-allowed}
+  .submit.done,.submit.done:disabled{background:var(--ok);cursor:default;opacity:1;color:#fff}
+  .hint{font-size:12px;color:var(--ink-soft)}
+  .done-banner{display:none;margin-top:16px;background:var(--ok-bg);border:1px solid #9ed3b6;
+    color:#136844;border-radius:10px;padding:14px 16px;font-size:14px;font-weight:700;text-align:center}
+  .done-banner.show{display:block}
+  .done-banner span{display:block;font-weight:400;font-size:13px;margin-top:4px;color:#1f7a52}
+  body.submitted #answer{background:#f7f8fb;color:var(--ink-soft)}
+  body.submitted .toolbar{opacity:.5}
+
+  #toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);
+    background:var(--over);color:#fff;padding:11px 18px;border-radius:9px;font-size:14px;font-weight:600;
+    opacity:0;pointer-events:none;transition:.25s;z-index:70;box-shadow:0 8px 24px rgba(0,0,0,.2);max-width:90vw}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  #toast.good{background:var(--ok)}
+
+  .overlay{position:fixed;inset:0;background:rgba(20,26,40,.55);display:none;
+    align-items:center;justify-content:center;padding:20px;z-index:60}
+  .overlay.show{display:flex}
+  .modal{background:#fff;border-radius:14px;max-width:560px;width:100%;padding:26px;max-height:86vh;overflow:auto}
+  .modal h3{margin:0 0 6px}
+  .modal .lead{color:var(--ink-soft);font-size:14px;margin:0 0 16px}
+  .kv{border:1px solid var(--line);border-radius:8px;overflow:hidden;font-size:13px}
+  .kv div{display:flex;padding:8px 12px;border-bottom:1px solid var(--line)}
+  .kv div:last-child{border-bottom:none}
+  .kv div span:first-child{width:150px;color:var(--ink-soft);flex-shrink:0}
+  .kv div span:last-child{font-family:var(--mono);word-break:break-word}
+  .mode-tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.06em;
+    padding:3px 9px;border-radius:20px;background:var(--warn-bg);color:var(--warn);margin-bottom:12px}
+  .mode-tag.bad{background:var(--over-bg);color:var(--over)}
+  .warnbox{background:var(--warn-bg);border:1px solid #e6c46a;color:#8a5a00;border-radius:10px;
+    padding:12px 14px;font-size:13px;font-weight:700;margin:0 0 16px}
+
+  .btn-row{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
+  .btn{flex:1;min-width:140px;display:inline-flex;align-items:center;justify-content:center;text-align:center;
+    padding:12px 14px;border-radius:9px;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--ui);
+    text-decoration:none;border:1px solid transparent;line-height:1.35}
+  .btn-primary{background:var(--accent);color:#fff}
+  .btn-primary:hover{background:var(--accent-d)}
+  .btn-ghost{background:#fff;color:var(--ink);border-color:var(--line)}
+  .btn-dark{background:var(--chrome);color:#fff;width:100%;margin-top:18px}
+
+  .spinner{width:36px;height:36px;border:4px solid #dfe4f3;border-top-color:var(--accent);
+    border-radius:50%;animation:spin .9s linear infinite;margin:16px auto}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .fallback{margin-top:18px;border-top:1px dashed var(--line);padding-top:14px}
+  .fb-title{font-weight:700;font-size:14px;margin:0 0 10px}
+  .fb-note{font-size:12px;color:var(--ink-soft);margin:8px 0 0}
+  .fb-more{margin-top:10px;font-size:13px}
+  .fb-more summary{cursor:pointer;color:var(--accent);font-weight:600}
+  .copybox{width:100%;min-height:130px;margin-top:8px;font-family:var(--write);font-size:14px;line-height:1.5;
+    padding:10px;border:1px solid var(--line);border-radius:8px;background:#fbfcff;resize:vertical}
+</style>
+</head>
+<body>
+<header>
+  <div class="head-inner" id="headInner">
+    <div class="brand hidden" id="brand"></div>
+    <div class="clock-wrap"><span class="clock-label">現在時刻</span><div class="clock" id="clock">--:--</div></div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- 受験者情報 -->
+  <section class="card">
+    <h2>受験者情報</h2>
+    <div class="id-grid">
+      <div class="field">
+        <label for="name">氏名</label>
+        <input id="name" type="text" autocomplete="off" placeholder="例）神田 花子">
+      </div>
+      <div class="field">
+        <label for="sid">学籍番号</label>
+        <input id="sid" type="text" autocomplete="off" inputmode="numeric" placeholder="例）20250000">
+      </div>
+      <div class="field">
+        <label for="assignment">課題名</label>
+        <input id="assignment" type="text" autocomplete="off" placeholder="例）実践問題１">
+      </div>
+    </div>
+    <div class="field" style="margin-top:12px">
+      <label for="email">メールアドレス（提出の控えを送ります）</label>
+      <input id="email" type="email" autocomplete="off" inputmode="email" placeholder="例）20250000@kanda.kifl.ac.jp">
+    </div>
+    <p class="note" id="profileNote">氏名・学籍番号・メールアドレスはこの端末に保存され、次回このフォームを開いたときに自動で入力されます。</p>
+  </section>
+
+  <!-- 解答 -->
+  <section class="card">
+    <h2>解答（英語で入力）</h2>
+
+    <div class="toolbar" role="toolbar" aria-label="編集ツール">
+      <button class="tool" id="btnCut"  type="button">✂ Cut <kbd>Ctrl+X</kbd></button>
+      <button class="tool" id="btnCopy" type="button">⧉ Copy <kbd>Ctrl+C</kbd></button>
+      <button class="tool" id="btnPaste" type="button">📋 Paste <kbd>Ctrl+V</kbd></button>
+      <span class="tsep"></span>
+      <button class="tool" id="btnUndo" type="button">↶ Undo <kbd>Ctrl+Z</kbd></button>
+      <button class="tool" id="btnRedo" type="button">↷ Redo <kbd>Ctrl+Y</kbd></button>
+      <span class="clip-ind" id="clipInd">内部クリップボード：空</span>
+    </div>
+
+    <div class="writer">
+      <textarea id="answer" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off"
+        writingsuggestions="false" data-gramm="false" data-gramm_editor="false" data-enable-grammarly="false"
+        placeholder="ここに解答を入力してください。&#10;※外部（翻訳ソフト・AI・Webページ等）からの貼り付けはできません。フォーム内で書いた文章の切り取り・コピー・貼り付けは上のボタンで行えます。"></textarea>
+      <div class="gauge">
+        <span><b id="wc">0</b> 語</span>
+        <span class="sub"><b id="cc">0</b> 文字</span>
+        <span class="status st-warn hidden" id="status">不足</span>
+        <div class="bar hidden" id="bar"><i id="barFill"></i></div>
+        <span class="target hidden" id="target"></span>
+      </div>
+    </div>
+
+    <div class="watch">
+      <div class="watch-card">
+        <div class="wlabel">入力時間</div>
+        <div class="wvalue" id="elapsed">0:00</div>
+      </div>
+      <div class="watch-card">
+        <div class="wlabel">打鍵数</div>
+        <div class="wvalue" id="keys">0</div>
+      </div>
+      <div class="watch-card" id="blurCard">
+        <div class="wlabel">画面を離れた回数</div>
+        <div class="wvalue" id="blur">0</div>
+      </div>
+      <div class="watch-card" id="pasteCard">
+        <div class="wlabel">貼り付けブロック</div>
+        <div class="wvalue" id="pasteBlk">0</div>
+      </div>
+    </div>
+    <div class="watch-warn" id="watchWarn">⚠ 試験中に他のサイトを見ることは不正です</div>
+    <div class="blur-notice" id="blurNotice">不正ではなくアクシデントで画面遷移してしまった場合は、その場で先生に知らせてください。しばらく時間が経ってから報告した場合や、申し出がなく不正がカウントされていた場合は、不正実施と見なされ、0点＆不合格になります。</div>
+    <div class="leave-list" id="leaveList"></div>
+
+    <div class="actions">
+      <button class="submit" id="btnSubmit" type="button">解答を提出する</button>
+      <span class="hint" id="submitHint">提出後は編集できません。内容を確認してから提出してください。</span>
+    </div>
+
+    <div class="done-banner" id="doneBanner">
+      ✓ 提出が完了しました
+      <span>入力したメールアドレス宛の控えメールを確認してください。このページはもう閉じて構いません。</span>
+    </div>
+  </section>
+
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+<div class="overlay" id="overlay"><div class="modal" id="modal" role="dialog" aria-modal="true"></div></div>
+
+<script>
+/* =====================================================================
+   CONFIG — 先生が設定する箇所はここだけ
+   ===================================================================== */
+const CONFIG = {
+  // 送信先：GASウェブアプリの /exec URL（空のままだと送信しない「プレビュー」になる）
+  gasUrl: "",
+
+  // 送信がうまくいかないとき、学生が英文をメールで送る宛先（先生のメールアドレス）
+  teacherEmail: "",
+
+  // ページ上部のタイトル（Google Sitesではサイト側にタイトルがあるので空でよい）
+  formTitle: "Writing Submission Form",
+  formSubtitle: "ライティング提出フォーム",
+
+  // 語数の目標範囲。null なら語数・文字数を表示するだけ。例：{ min: 50, max: 150 }
+  wordTarget: null,
+
+  minWordsToSubmit: 1,        // これ未満の語数では提出できない
+  confirmBeforeSubmit: true,  // 提出前に確認ウィンドウを出す
+
+  // 「課題名」も次回まで覚えておくか。
+  // false 推奨：課題ごとに変わるため、前回の課題名のまま提出される事故を防ぐ。
+  rememberAssignment: false,
+
+  // 入力できるメールアドレスのドメイン（@より後ろ）。空なら制限なし。例：["kanda.kifl.ac.jp"]
+  // ※Code.gs の ALLOWED_EMAIL_DOMAINS にも同じものを設定してください。
+  allowedEmailDomains: [],
+
+  leaveThresholdMs: 2000,     // この時間(ミリ秒)以上、画面を離れたら「画面を離れた」と数える
+
+  // 画面は見えたまま、別のウィンドウやアプリを操作していた時間（フォーカス外れ）も回数に数えるか。
+  // ※Google Sites などに埋め込んで使う場合は、true でも自動的に「離脱ログに残すだけ」になります
+  //   （埋め込み枠の外をクリックしただけで反応してしまうため、回数には入れません）。
+  countFocusLoss: true,
+
+  maxChunkChars: 30,          // 1回の入力でこれを超える文字列が入ったら貼り付けとみなしてブロック
+  sendTimeoutMs: 15000,       // 1回の送信を待つ上限(ミリ秒)
+  fallbackDelayMs: 5000       // 送信中画面で「メールで送信する」を表示するまでの待ち時間(ミリ秒)
+};
+/* ===================================================================== */
+
+
+/* ---------- 共通ユーティリティ ---------- */
+const $ = id => document.getElementById(id);
+const ta = $("answer");
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g,
+  c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+const countWords = t => { t = String(t || "").trim(); return t ? t.split(/\s+/).length : 0; };
+const fmt = sec => Math.floor(sec / 60) + ":" + String(sec % 60).padStart(2, "0");
+const shortId = id => id ? String(id).replace(/-/g, "").slice(0, 8).toUpperCase() : "";
+const nowTime = () => new Date().toLocaleTimeString("ja-JP", { hour12: false });
+const newId = () => (window.crypto && crypto.randomUUID)
+  ? crypto.randomUUID()
+  : Date.now().toString(36) + "-" + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+
+// localStorage は環境によって使えない（サンドボックス等）ため、失敗しても止まらないよう包む
+const store = {
+  get(k){ try { return localStorage.getItem(k); } catch(_) { return null; } },
+  set(k, v){ try { localStorage.setItem(k, v); } catch(_) {} },
+  del(k){ try { localStorage.removeItem(k); } catch(_) {} }
+};
+
+
+/* ---------- 状態 ---------- */
+let internalClipboard = "";
+let submissionId = newId();       // 下書きと一緒に保存し、再送・復元後も同じIDを使う（二重記録防止）
+let startTime = null, keyCount = 0, blurCount = 0, blurLog = [], pasteBlocked = 0;
+let leaveShown = [];              // 学生の画面に赤字で出す離脱の一覧（回数に数えたものだけ）
+let submitted = false, submitting = false;
+
+
+/* ---------- Undo / Redo（ブラウザ標準に頼らない独自スタック） ---------- */
+let undoStack = [], redoStack = [], pendingPreState = null, typingTimer = null;
+const snapshot = () => ({ v: ta.value, s: ta.selectionStart, e: ta.selectionEnd });
+function pushUndo(st){ undoStack.push(st); if (undoStack.length > 300) undoStack.shift(); }
+function commitBurst(){
+  if (pendingPreState !== null) { pushUndo(pendingPreState); redoStack.length = 0; pendingPreState = null; }
+}
+function afterEdit(){ if (startTime === null) startTime = Date.now(); onChange(); refreshTools(); scheduleSave(); }
+function restoreSnap(st){ ta.value = st.v; try { ta.setSelectionRange(st.s, st.e); } catch(_) {} afterEdit(); ta.focus(); }
+function mutate(fn){ commitBurst(); pushUndo(snapshot()); redoStack.length = 0; fn(); afterEdit(); }
+
+
+/* ---------- 語数・文字数 ---------- */
+function onChange(){
+  const words = countWords(ta.value);
+  $("wc").textContent = words;
+  $("cc").textContent = ta.value.trim().length;
+  const tgt = CONFIG.wordTarget;
+  if (tgt) {
+    let cls, label, pct, color;
+    if (words < tgt.min)      { cls = "st-warn"; label = "不足";   color = "var(--warn)"; pct = Math.min(100, words / tgt.min * 100); }
+    else if (words <= tgt.max){ cls = "st-ok";   label = "範囲内"; color = "var(--ok)";   pct = 100; }
+    else                      { cls = "st-over"; label = "超過";   color = "var(--over)"; pct = 100; }
+    $("status").className = "status " + cls; $("status").textContent = label;
+    $("barFill").style.width = pct + "%"; $("barFill").style.background = color;
+  }
+  if (!submitted && !submitting) $("btnSubmit").disabled = words < CONFIG.minWordsToSubmit;
+}
+
+
+/* ---------- 内部クリップボード（システムのクリップボードには触れない） ---------- */
+const selRange = () => [ta.selectionStart, ta.selectionEnd];
+function updateClipInd(){
+  $("clipInd").textContent = internalClipboard
+    ? "内部クリップボード：" + countWords(internalClipboard) + " 語" : "内部クリップボード：空";
+}
+function doCopy(){
+  const [s, e] = selRange();
+  if (s !== e) { internalClipboard = ta.value.substring(s, e); updateClipInd(); }
+  ta.focus(); refreshTools();
+}
+function doCut(){
+  const [s, e] = selRange();
+  if (s !== e) {
+    internalClipboard = ta.value.substring(s, e); updateClipInd();
+    mutate(() => { ta.value = ta.value.substring(0, s) + ta.value.substring(e); ta.setSelectionRange(s, s); });
+  }
+  ta.focus();
+}
+function doPaste(){
+  if (!internalClipboard) { ta.focus(); return; }
+  const [s, e] = selRange();
+  mutate(() => {
+    ta.value = ta.value.substring(0, s) + internalClipboard + ta.value.substring(e);
+    const p = s + internalClipboard.length; ta.setSelectionRange(p, p);
+  });
+  ta.focus();
+}
+function doUndo(){ commitBurst(); if (!undoStack.length) { ta.focus(); return; } redoStack.push(snapshot()); restoreSnap(undoStack.pop()); }
+function doRedo(){ if (!redoStack.length) { ta.focus(); return; } pushUndo(snapshot()); restoreSnap(redoStack.pop()); }
+function refreshTools(){
+  const [s, e] = selRange();
+  $("btnCut").disabled   = submitted || s === e;
+  $("btnCopy").disabled  = submitted || s === e;
+  $("btnPaste").disabled = submitted || !internalClipboard;
+  $("btnUndo").disabled  = submitted || (!undoStack.length && pendingPreState === null);
+  $("btnRedo").disabled  = submitted || !redoStack.length;
+}
+
+
+/* ---------- 入力の監視 ----------
+   打鍵数は beforeinput（実際に入力された文字）で数える。
+   ※スマホのキーボードは keydown で文字が取れない（"Unidentified"）ため、keydown 方式では
+     打鍵数が 0 のままになり、手入力なのに「打鍵が少ない＝怪しい」と誤判定されてしまう。 */
+function addKeys(n){ keyCount += n; $("keys").textContent = keyCount; }
+
+function blockPaste(msg){
+  pasteBlocked++; $("pasteBlk").textContent = pasteBlocked;
+  updateAlerts(); scheduleSave();
+  toast(msg || "外部からの貼り付けはできません");
+}
+
+ta.addEventListener("beforeinput", e => {
+  if (submitted) { e.preventDefault(); return; }
+  const t = e.inputType || "";
+  // 外部からの貼り付け・ドロップ（スマホのクリップボード候補からの挿入を含む）
+  if (t === "insertFromPaste" || t === "insertFromPasteAsQuotation" || t === "insertFromDrop" || t === "insertFromYank") {
+    e.preventDefault(); blockPaste(); return;
+  }
+  // 1回の入力で長い文字列が一気に入る＝クリップボード候補・音声入力などの可能性が高い
+  if (t === "insertText" && e.data && e.data.length > CONFIG.maxChunkChars) {
+    e.preventDefault(); blockPaste("まとまった文章を一度に入力することはできません"); return;
+  }
+  if (t === "insertText" && e.data) addKeys(e.data.length);
+  else if (t === "insertLineBreak" || t === "insertParagraph") addKeys(1);
+
+  // Undo 用スナップショット（入力のまとまりごと）
+  if (pendingPreState === null) pendingPreState = snapshot();
+  clearTimeout(typingTimer); typingTimer = setTimeout(commitBurst, 700);
+});
+// 変換入力（Androidのキーボード等）は確定時の文字数で数える
+ta.addEventListener("compositionend", e => { if (!submitted && e.data) addKeys(e.data.length); });
+ta.addEventListener("input", afterEdit);
+
+ta.addEventListener("paste",       e => { e.preventDefault(); if (!submitted) blockPaste(); });
+ta.addEventListener("drop",        e => { e.preventDefault(); if (!submitted) toast("ドラッグ&ドロップはできません"); });
+ta.addEventListener("dragover",    e => e.preventDefault());
+ta.addEventListener("contextmenu", e => e.preventDefault());   // 解答欄だけ右クリックメニューを止める
+["keyup", "mouseup", "touchend", "select", "focus"].forEach(ev => ta.addEventListener(ev, refreshTools));
+
+// ショートカットは解答欄にフォーカスがあるときだけ内部クリップボードにつなぐ
+// （以前は氏名欄などでも Ctrl+V が横取りされ、メールアドレスを貼り付けられなかった）
+ta.addEventListener("keydown", e => {
+  if (submitted || !(e.ctrlKey || e.metaKey) || e.altKey) return;
+  const k = (e.key || "").toLowerCase();
+  if (k === "c")      { e.preventDefault(); doCopy(); }
+  else if (k === "x") { e.preventDefault(); doCut(); }
+  else if (k === "v") { e.preventDefault(); doPaste(); }
+  else if (k === "z" && !e.shiftKey)            { e.preventDefault(); doUndo(); }
+  else if (k === "y" || (k === "z" && e.shiftKey)) { e.preventDefault(); doRedo(); }
+});
+
+
+/* ---------- 警告表示 ---------- */
+function updateAlerts(){
+  $("blurCard").classList.toggle("alert", blurCount >= 1);
+  $("pasteCard").classList.toggle("alert", pasteBlocked >= 1);
+  $("watchWarn").classList.toggle("show", blurCount >= 1 || pasteBlocked >= 1);
+  $("blurNotice").classList.toggle("show", blurCount >= 1);
+  const box = $("leaveList"); box.textContent = "";
+  leaveShown.forEach(t => { const d = document.createElement("div"); d.textContent = t; box.appendChild(d); });
+  box.classList.toggle("show", leaveShown.length > 0);
+}
+
+
+/* ---------- 画面離脱の検知 ----------
+   ・画面が隠れた（別のタブ・別のアプリ・最小化）：隠れていた実時間が leaveThresholdMs 以上なら数える。
+     スマホの文字選択メニューやキーボード開閉による一瞬の非表示は数えない。Date.now() の差分で測る。
+   ・フォーカス外れ（画面は見えたまま別のウィンドウを操作）：
+       ページを直接開いている場合（GitHub Pages）… フォームに戻るまでをひとまとまりとして回数に数える。
+       埋め込みの場合（Google Sites）……………………… 回数には入れず、離脱ログにだけ残す。
+   ・離脱ログには「離れた時刻〜戻った時刻（秒数）」を残す（先生が、学生の申し出の時刻と照合できる）。 */
+const EMBEDDED    = (function(){ try { return window.self !== window.top; } catch(_) { return true; } })();
+const COUNT_FOCUS = !!CONFIG.countFocusLoss && !EMBEDDED;
+const hms = ms => new Date(ms).toLocaleTimeString("ja-JP", { hour12: false });
+const rangeText = (from, to) => hms(from) + "〜" + hms(to) + "（" + Math.round((to - from) / 1000) + "秒）";
+
+let seg = null;        // いま続いている「離れている区間」 { state: "hidden" | "unfocused", at }
+let epi = null;        // COUNT_FOCUS のとき：フォームに戻るまでのひとまとまり { start, hiddenMs }
+let leftAt = 0;        // 離れ始めた時刻。下書きに保存し、閉じて開き直したときの離脱時間の計算に使う
+let mailClickAt = 0;   // 「メールで送信する」を押した時刻（メール画面を開いたことを離脱に数えないため）
+
+// 回数に数える離脱を1件記録する。kind: ""（画面離脱） / "focus"（フォーカス外れ） / "reopen"（閉じて開き直し）
+function addLeave(from, to, kind){
+  if (mailClickAt && from >= mailClickAt && from - mailClickAt < 5000) {
+    mailClickAt = 0;
+    blurLog.push(rangeText(from, to) + "メール作成画面を開いた");
+    scheduleSave(); return;
+  }
+  blurCount++;
+  if (kind === "reopen") {
+    blurLog.push(hms(from) + "〜" + hms(to) + " 離脱" + Math.round((to - from) / 1000) + "秒（再開）");
+    leaveShown.push(rangeText(from, to) + "画面離脱（再開）");
+  } else if (kind === "focus") {
+    blurLog.push(rangeText(from, to) + "フォーカス外れ");
+    leaveShown.push(rangeText(from, to) + "フォーカス外れ");
+  } else {
+    blurLog.push(rangeText(from, to));
+    leaveShown.push(rangeText(from, to) + "画面離脱");
+  }
+  $("blur").textContent = blurCount; updateAlerts(); scheduleSave();
+}
+
+// focused：blur / focus イベントから呼ぶときは true / false を渡す（その瞬間の状態が確実に分かるため）
+function syncAway(focused){
+  if (submitted) return;
+  const now = Date.now(), thr = CONFIG.leaveThresholdMs;
+  if (focused == null) focused = document.hasFocus();
+  const st = document.hidden ? "hidden" : (focused ? "" : "unfocused");
+  if ((seg ? seg.state : "") === st) return;
+
+  if (seg) {                                       // 直前の区間を閉じる
+    const ms = now - seg.at;
+    if (COUNT_FOCUS) { if (seg.state === "hidden") epi.hiddenMs += ms; }
+    else if (ms >= thr) {
+      if (seg.state === "hidden") addLeave(seg.at, now, "");
+      else { blurLog.push(rangeText(seg.at, now) + "フォーカス外れ"); scheduleSave(); }   // ログだけ（回数に入れない）
+    }
+  }
+  seg = st ? { state: st, at: now } : null;
+
+  if (COUNT_FOCUS) {
+    if (st && !epi) epi = { start: now, hiddenMs: 0 };
+    if (!st && epi) {                              // フォームに戻った：離れていた全体の時間で判定
+      const e = epi; epi = null;
+      if (now - e.start >= thr) addLeave(e.start, now, e.hiddenMs >= thr ? "" : "focus");
+    }
+    leftAt = epi ? epi.start : 0;
+  } else {
+    leftAt = (seg && seg.state === "hidden") ? seg.at : 0;
+  }
+  if (st === "hidden") saveNow();                  // 画面を離れる瞬間に必ず保存（閉じる・落ちる対策）
+  else scheduleSave();
+}
+document.addEventListener("visibilitychange", () => syncAway());
+window.addEventListener("blur",  () => syncAway(false));
+window.addEventListener("focus", () => syncAway(true));
+document.addEventListener("click", e => {          // メール送信の画面を開く操作は離脱に数えない
+  if (e.target && e.target.closest && e.target.closest(".fallback a")) mailClickAt = Date.now();
+}, true);
+window.addEventListener("pagehide", saveNow);
+window.addEventListener("beforeunload", e => {   // 書きかけのまま閉じようとしたら確認（対応ブラウザのみ）
+  saveNow();
+  if (!submitted && ta.value.trim()) { e.preventDefault(); e.returnValue = ""; }
+});
+
+
+/* ---------- 時計・入力時間 ---------- */
+function tick(){
+  const now = new Date();
+  $("clock").textContent = String(now.getHours()).padStart(2, "0") + ":" + String(now.getMinutes()).padStart(2, "0");
+  if (startTime && !submitted) $("elapsed").textContent = fmt(Math.floor((Date.now() - startTime) / 1000));
+}
+setInterval(tick, 1000);
+
+
+/* ---------- トースト ---------- */
+let toastT = null;
+function toast(msg, good){
+  const t = $("toast"); t.textContent = msg; t.className = "show" + (good ? " good" : "");
+  clearTimeout(toastT); toastT = setTimeout(() => t.className = "", 2600);
+}
+
+
+/* ---------- 端末への保存 ----------
+   (1) 受験者情報（氏名・学籍番号・メール）… ずっと保存し、次回フォームを開いたときに自動入力
+   (2) 書きかけの解答（下書き）……………… 送信成功で消去。ブラウザを閉じる・落ちる・送信が止まっても復元
+   下書きには監視の数値（入力時間・打鍵数・離脱回数・貼り付けブロック）も含めるので、
+   ページを開き直しても数値がリセットされない（開き直しによるごまかしも防ぐ）。 */
+const PROFILE_KEY  = "wsf_profile_v1";
+const DRAFT_TTL_MS = 12 * 60 * 60 * 1000;          // 12時間より古い下書きは復元しない
+const DRAFT_KEY = "wsf_draft_v2_" + (function(u){  // フォーム（送信先）ごとに別の保存場所
+  let h = 0; const s = String(u || "preview");
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return (h >>> 0).toString(36);
+})(CONFIG.gasUrl);
+
+function saveProfile(){
+  const p = { name: $("name").value, sid: $("sid").value, email: $("email").value };
+  if (CONFIG.rememberAssignment) p.assignment = $("assignment").value;
+  store.set(PROFILE_KEY, JSON.stringify(p));
+}
+function loadProfile(){
+  try {
+    const p = JSON.parse(store.get(PROFILE_KEY) || "null");
+    if (!p) return;
+    if (p.name)  $("name").value  = p.name;
+    if (p.sid)   $("sid").value   = p.sid;
+    if (p.email) $("email").value = p.email;
+    if (CONFIG.rememberAssignment && p.assignment) $("assignment").value = p.assignment;
+  } catch(_) {}
+}
+function saveDraft(){
+  if (submitted) return;
+  if (!ta.value.trim() && !$("assignment").value && startTime === null && !blurCount && !pasteBlocked) return;
+  store.set(DRAFT_KEY, JSON.stringify({
+    submissionId, answer: ta.value, assignment: $("assignment").value,
+    startTime, keyCount, blurCount, blurLog, leaveShown, pasteBlocked, leftAt, savedAt: Date.now()
+  }));
+}
+function clearDraft(){ store.del(DRAFT_KEY); }
+function restoreDraft(){
+  let d = null;
+  try { d = JSON.parse(store.get(DRAFT_KEY) || "null"); } catch(_) { d = null; }
+  if (!d) return;
+  if (!d.savedAt || Date.now() - d.savedAt > DRAFT_TTL_MS) { clearDraft(); return; }
+  if (d.submissionId) submissionId = d.submissionId;
+  if (d.assignment) $("assignment").value = d.assignment;
+  ta.value     = d.answer || "";
+  startTime    = d.startTime || null;
+  keyCount     = d.keyCount || 0;
+  blurCount    = d.blurCount || 0;
+  pasteBlocked = d.pasteBlocked || 0;
+  blurLog      = Array.isArray(d.blurLog) ? d.blurLog : [];
+  leaveShown   = Array.isArray(d.leaveShown) ? d.leaveShown : [];
+  // 閉じて開き直した場合：離れ始め（なければ最後の保存）からの時間が基準以上なら離脱として数える。
+  // 解答を書き始める前の開き直しは数えず、「再開」とだけ残す。
+  const from = d.leftAt || d.savedAt, now = Date.now();
+  if (startTime && now - from >= CONFIG.leaveThresholdMs) addLeave(from, now, "reopen");
+  else blurLog.push(nowTime() + " 再開");
+  $("keys").textContent = keyCount; $("blur").textContent = blurCount; $("pasteBlk").textContent = pasteBlocked;
+  if (d.answer && d.answer.trim()) toast("書きかけの解答を復元しました", true);
+  saveDraft();
+}
+let saveTimer = null;
+function scheduleSave(){ clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 400); }
+function saveNow(){ clearTimeout(saveTimer); saveProfile(); saveDraft(); }
+["name", "sid", "email", "assignment"].forEach(id => $(id).addEventListener("input", scheduleSave));
+
+
+/* ---------- 学籍番号・メールは半角に統一 ----------
+   全角で入力しても半角に変換し（２０２５→2025、＠→@）、残った全角文字は取り除く。
+   日本語入力の変換中は触らない（変換が壊れるため）。 */
+function asciiOnly(el){
+  const fix = () => {
+    const before = el.value;
+    const after = before.normalize("NFKC").replace(/[^\x21-\x7E]/g, "");
+    if (after === before) return;
+    let pos = null; try { pos = el.selectionStart; } catch(_) {}
+    el.value = after;
+    if (pos != null) { const p = Math.max(0, pos - (before.length - after.length)); try { el.setSelectionRange(p, p); } catch(_) {} }
+  };
+  el.addEventListener("input", e => { if (!e.isComposing) fix(); });
+  el.addEventListener("compositionend", fix);
+}
+asciiOnly($("sid"));
+asciiOnly($("email"));
+
+
+/* ---------- モーダル ---------- */
+function openModal(html){ $("modal").innerHTML = html; $("overlay").classList.add("show"); }
+function closeModal(){ $("overlay").classList.remove("show"); }
+
+// サンドボックス（Google Sites）では標準の confirm() が動かないため自前で表示する
+function customConfirm(message){
+  return new Promise(resolve => {
+    openModal('<h3>確認</h3><p class="lead">' + esc(message) + '</p>' +
+      '<div class="btn-row"><button class="btn btn-ghost" id="cfCancel">キャンセル</button>' +
+      '<button class="btn btn-primary" id="cfOk">提出する</button></div>');
+    $("cfOk").onclick     = () => { closeModal(); resolve(true); };
+    $("cfCancel").onclick = () => { closeModal(); resolve(false); };
+  });
+}
+
+
+/* ---------- 送信できないときの「メールで送信」 ---------- */
+function buildMail(data){
+  const subject = "【メール提出】" + data.assignment + " " + data.studentId + " " + data.name;
+  const body = [
+    "（提出フォームから送信できなかったため、メールで提出します）",
+    "",
+    "氏名：" + data.name,
+    "学籍番号：" + data.studentId,
+    "課題名：" + data.assignment,
+    "メールアドレス：" + data.email,
+    "語数：" + data.wordCount + " 語",
+    "受付ID：" + shortId(data.submissionId),
+    "作成日時：" + new Date().toLocaleString("ja-JP"),
+    "",
+    "──────── 解答 ────────",
+    data.answer,
+    "──────────────────"
+  ].join("\n");
+  return { subject, body };
+}
+function fallbackHtml(data){
+  const m  = buildMail(data);
+  const to = String(CONFIG.teacherEmail || "").trim();
+  const mailto = "mailto:" + to + "?subject=" + encodeURIComponent(m.subject) +
+                 "&body=" + encodeURIComponent(m.body.replace(/\n/g, "\r\n"));
+  const gmail  = "https://mail.google.com/mail/?view=cm&fs=1" + (to ? "&to=" + encodeURIComponent(to) : "") +
+                 "&su=" + encodeURIComponent(m.subject) + "&body=" + encodeURIComponent(m.body);
+  return '<div class="fallback">' +
+    '<p class="fb-title">うまく送信できない場合：</p>' +
+    '<a class="btn btn-primary" style="width:100%" href="' + esc(mailto) + '" target="_blank" rel="noopener">入力した英文をメールで送信する</a>' +
+    '<p class="fb-note">解答の英文が本文に入ったメールの作成画面が開きます。そのまま送信してください。' +
+      (to ? '' : '<b>宛先に先生のメールアドレスを入力してください。</b>') +
+      'メールで提出したことは、必ず先生にも伝えてください。</p>' +
+    '<details class="fb-more"><summary>メール画面が開かない・本文が途中で切れている場合</summary>' +
+      '<div class="btn-row" style="margin-top:10px"><a class="btn btn-ghost" href="' + esc(gmail) + '" target="_blank" rel="noopener">Gmailで作成する</a></div>' +
+      '<p class="fb-note">それでも開かない場合は、下の内容をすべてコピーして、' +
+        (to ? '<b>' + esc(to) + '</b> 宛' : '先生宛') + 'のメールに貼り付けて送信してください。</p>' +
+      '<textarea class="copybox" readonly>' + esc(m.body) + '</textarea>' +
+    '</details></div>';
+}
+function bindCopybox(){
+  document.querySelectorAll(".copybox").forEach(el => el.addEventListener("focus", () => el.select()));
+}
+
+
+/* ---------- 提出 ---------- */
+function collect(){
+  return {
+    submissionId,
+    name: $("name").value.trim(),
+    studentId: $("sid").value.trim(),
+    assignment: $("assignment").value.trim(),
+    email: $("email").value.trim(),
+    answer: ta.value.trim(),
+    wordCount: countWords(ta.value),
+    charCount: ta.value.trim().length,
+    durationSec: startTime ? Math.floor((Date.now() - startTime) / 1000) : 0,
+    keystrokes: keyCount, pasteBlocked, blurCount,
+    blurLog: blurLog.join(" | "),
+    userAgent: navigator.userAgent,
+    submittedAt: new Date().toISOString()
+  };
+}
+function validate(){
+  const need = [["name", "氏名"], ["sid", "学籍番号"], ["assignment", "課題名"], ["email", "メールアドレス"]];
+  for (const [id, label] of need) {
+    if (!$(id).value.trim()) { toast(label + "を入力してください"); $(id).focus(); return false; }
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test($("email").value.trim())) {
+    toast("メールアドレスの形式が正しくありません"); $("email").focus(); return false;
+  }
+  const doms = (CONFIG.allowedEmailDomains || []).map(x => String(x).trim().toLowerCase().replace(/^@/, "")).filter(Boolean);
+  const dom  = $("email").value.trim().toLowerCase().split("@").pop();
+  if (doms.length && !doms.some(x => dom === x || dom.endsWith("." + x))) {
+    toast("メールアドレスは @" + doms.join(" / @") + " のものを入力してください"); $("email").focus(); return false;
+  }
+  if (countWords(ta.value) < CONFIG.minWordsToSubmit) { toast("解答を入力してください"); ta.focus(); return false; }
+  return true;
+}
+function setSending(on){
+  $("btnSubmit").disabled = on;
+  $("btnSubmit").textContent = on ? "送信中…" : "解答を提出する";
+}
+function lockForm(){
+  submitted = true; ta.readOnly = true;
+  ["btnCut", "btnCopy", "btnPaste", "btnUndo", "btnRedo", "btnSubmit"].forEach(id => $(id).disabled = true);
+  ["name", "sid", "assignment", "email"].forEach(id => $(id).disabled = true);
+  const btn = $("btnSubmit"); btn.textContent = "✓ 提出済み"; btn.classList.add("done");
+  $("submitHint").textContent = "この解答は提出済みです。編集はできません。";
+  $("doneBanner").classList.add("show");
+  document.body.classList.add("submitted");
+}
+
+/* GASへの送信：fetch(text/plain) で送り、サーバーの返事(JSON)で成否を判定する。
+   ・text/plain にすると CORS の事前確認が起きず、返事も読める。
+   ・タイムアウト付きなので「送信中」のまま固まらない。 */
+async function postJson(data){
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), CONFIG.sendTimeoutMs);
+  try {
+    const res = await fetch(CONFIG.gasUrl, {
+      method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(data), signal: ctrl.signal, redirect: "follow"
+    });
+    let j = null; try { j = await res.json(); } catch(_) {}
+    if (j && j.status === "ok")    return { ok: true, mail: j.mail, duplicate: j.duplicate };
+    if (j && j.status === "error") return { serverError: true, error: j.error || "" };
+    return { unconfirmed: true };
+  } catch(_) {
+    return { unconfirmed: true };            // 通信エラー・タイムアウト
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+let fallbackTimer = null;
+function showSending(data){
+  openModal('<h3>送信中です…</h3><div class="spinner"></div>' +
+    '<p class="lead" style="text-align:center">画面を閉じたり再読み込みしたりせず、そのままお待ちください。</p>' +
+    '<div id="fbSlot"></div>');
+  clearTimeout(fallbackTimer);
+  fallbackTimer = setTimeout(() => {
+    const slot = $("fbSlot");
+    if (slot && submitting) { slot.innerHTML = fallbackHtml(data); bindCopybox(); }
+  }, CONFIG.fallbackDelayMs);
+}
+
+async function submit(){
+  if (submitted || submitting) return;
+  if (!validate()) return;
+  if (CONFIG.confirmBeforeSubmit &&
+      !(await customConfirm("解答を提出します。提出後は編集できません。よろしいですか？"))) return;
+
+  saveNow();                                 // 送信前に必ず下書きを確定保存
+  const data = collect();
+
+  if (!CONFIG.gasUrl) {                      // プレビュー（送信先が未設定）
+    lockForm(); showResult(data, "preview", {});
+    return;
+  }
+
+  submitting = true; setSending(true); showSending(data);
+  let r = await postJson(data);
+  if (r.unconfirmed) r = await postJson(data);   // 同じ受付IDで1回だけ再送（届いていれば「記録済み」が返る）
+  submitting = false; clearTimeout(fallbackTimer);
+
+  if (r.ok) {
+    clearDraft(); lockForm(); showResult(data, "live", r);
+  } else {
+    setSending(false); onChange();
+    if (r.serverError) showServerError(data, r.error); else showUnconfirmed(data);
+  }
+}
+
+function showResult(data, mode, r){
+  const rows = [
+    ["氏名", data.name], ["学籍番号", data.studentId], ["課題名", data.assignment], ["メール", data.email],
+    ["語数", data.wordCount + " 語"], ["文字数", data.charCount],
+    ["入力時間", fmt(data.durationSec)], ["打鍵数", data.keystrokes],
+    ["画面を離れた回数", data.blurCount], ["貼り付けブロック", data.pasteBlocked],
+    ["受付ID", shortId(data.submissionId)]
+  ];
+  let lead;
+  if (mode === "preview") {
+    lead = '<span class="mode-tag">プレビュー（未送信）</span>' +
+           '<p class="lead">送信先（gasUrl）が未設定のため、送信はしていません。設定すると、この内容がスプレッドシートに記録されます。</p>';
+  } else if (r.mail === "off") {
+    lead = '<p class="lead">解答を送信しました。下の受付IDを控えておいてください。</p>';
+  } else if (r.mail === "sent" || r.mail === "dup") {
+    lead = '<p class="lead">解答を送信しました。あなたの記入したメールアドレス宛に解答の控えを送っているので確認してください。<br><br>' +
+           'メールが受け取れていない場合は、送信できていないか、メールアドレスにミスがあった可能性があります。その場合は必ず先生に伝えてください。</p>' +
+           '<div class="warnbox">※控えメールの確認ができていないのに試験当日に先生に伝えず、解答の送信ができていなかった場合、未提出扱いになり、後日の再受験はできません。</div>';
+  } else {
+    lead = '<p class="lead">解答は送信され、先生に届いています。ただし、<b>控えメールを送ることができませんでした</b>（メールの送信上限に達したなどの理由が考えられます）。<br><br>' +
+           'この画面の<b>受付ID</b>をメモして、先生に伝えてください。</p>';
+  }
+  openModal('<h3>' + (mode === "preview" ? "送信データの確認" : "提出が完了しました") + '</h3>' + lead +
+    '<div class="kv">' + rows.map(x => '<div><span>' + esc(x[0]) + '</span><span>' + esc(x[1]) + '</span></div>').join("") + '</div>' +
+    '<button class="btn btn-dark" id="closeModal">OK</button>');
+  $("closeModal").onclick = closeModal;
+}
+
+function showUnconfirmed(data){
+  openModal('<span class="mode-tag">確認できませんでした</span>' +
+    '<h3>提出の確認が取れませんでした</h3>' +
+    '<p class="lead">通信状況により、送信完了の確認が取れませんでした。<br><br>' +
+    'まず、入力したメールアドレスに<b>控えメールが届いていないか確認してください</b>。届いていれば提出は完了しています。<br><br>' +
+    '届いていない場合は、<b>このページを再読み込みせずに</b>、もう一度「解答を提出する」を押してください（同じ内容が二重に記録されることはありません）。解決しない場合は必ず先生に申し出てください。</p>' +
+    '<div class="kv"><div><span>受付ID</span><span>' + esc(shortId(data.submissionId)) + '</span></div></div>' +
+    fallbackHtml(data) +
+    '<button class="btn btn-dark" id="closeModal">閉じる</button>');
+  bindCopybox(); $("closeModal").onclick = closeModal;
+}
+
+function showServerError(data, err){
+  const busy = String(err || "").indexOf("busy") >= 0;
+  openModal('<span class="mode-tag bad">未提出</span>' +
+    '<h3>提出できませんでした</h3>' +
+    '<p class="lead">' + (busy ? 'アクセスが集中したため、今回の提出は記録されませんでした。'
+                               : 'サーバー側の問題で、今回の提出は記録されませんでした。') +
+    '<br><br>入力した文章はそのまま残っています。<b>数十秒ほど待ってから、もう一度「解答を提出する」を押してください</b>（同じ内容が二重に記録されることはありません）。' +
+    '<br><br>何度試しても失敗する場合は、下の「メールで送信する」を使い、必ず先生に申し出てください。</p>' +
+    fallbackHtml(data) +
+    '<button class="btn btn-dark" id="closeModal">閉じる</button>');
+  bindCopybox(); $("closeModal").onclick = closeModal;
+}
+
+
+/* ---------- 起動 ---------- */
+$("btnSubmit").addEventListener("click", submit);
+$("btnCut").addEventListener("click", doCut);
+$("btnCopy").addEventListener("click", doCopy);
+$("btnPaste").addEventListener("click", doPaste);
+$("btnUndo").addEventListener("click", doUndo);
+$("btnRedo").addEventListener("click", doRedo);
+
+if (CONFIG.formTitle) {
+  $("brand").innerHTML = esc(CONFIG.formTitle) + (CONFIG.formSubtitle ? "<small>" + esc(CONFIG.formSubtitle) + "</small>" : "");
+  $("brand").classList.remove("hidden");
+  $("headInner").classList.add("has-title");
+}
+if (CONFIG.wordTarget) {
+  ["status", "bar", "target"].forEach(id => $(id).classList.remove("hidden"));
+  $("target").textContent = "目標 " + CONFIG.wordTarget.min + "–" + CONFIG.wordTarget.max + " 語";
+}
+if (CONFIG.rememberAssignment) {
+  $("profileNote").textContent = "氏名・学籍番号・課題名・メールアドレスはこの端末に保存され、次回このフォームを開いたときに自動で入力されます。";
+}
+
+loadProfile();      // 受験者情報を自動入力
+restoreDraft();     // 書きかけの解答があれば復元
+updateClipInd(); refreshTools(); onChange(); updateAlerts(); tick();
+</script>
+</body>
+</html>
