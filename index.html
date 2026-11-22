@@ -263,10 +263,10 @@
    ===================================================================== */
 const CONFIG = {
   // 送信先：GASウェブアプリの /exec URL（空のままだと送信しない「プレビュー」になる）
-  gasUrl: "",
+  gasUrl: "https://script.google.com/macros/s/AKfycbxnQTTJEzkEFfU5U_ttUQmSPR57xb-_wTMOLaAwu8JqjJgWJyZdTmojSXXFMM0U-0RYgg/exec",
 
   // 送信がうまくいかないとき、学生が英文をメールで送る宛先（先生のメールアドレス）
-  teacherEmail: "",
+  teacherEmail: "kaida-m@kifl.ac.jp",
 
   // ページ上部のタイトル（Google Sitesではサイト側にタイトルがあるので空でよい）
   formTitle: "Writing Submission Form",
@@ -284,7 +284,7 @@ const CONFIG = {
 
   // 入力できるメールアドレスのドメイン（@より後ろ）。空なら制限なし。例：["kanda.kifl.ac.jp"]
   // ※Code.gs の ALLOWED_EMAIL_DOMAINS にも同じものを設定してください。
-  allowedEmailDomains: [],
+  allowedEmailDomains: [kanda.kifl.ac.jp],
 
   leaveThresholdMs: 2000,     // この時間(ミリ秒)以上、画面を離れたら「画面を離れた」と数える
 
