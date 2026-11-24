@@ -289,9 +289,12 @@ const CONFIG = {
   leaveThresholdMs: 2000,     // この時間(ミリ秒)以上、画面を離れたら「画面を離れた」と数える
 
   // 画面は見えたまま、別のウィンドウやアプリを操作していた時間（フォーカス外れ）も回数に数えるか。
-  // ※Google Sites などに埋め込んで使う場合は、true でも自動的に「離脱ログに残すだけ」になります
-  //   （埋め込み枠の外をクリックしただけで反応してしまうため、回数には入れません）。
-  countFocusLoss: true,
+  // false（推奨）：回数には数えず、離脱ログに「フォーカス外れ」とだけ残す。
+  // true：回数に数える（Google Sites などの埋め込みでは、true でも自動的にログのみになります）。
+  countFocusLoss: false,
+
+  // 学籍番号とメールアドレスの「@の前」が一致しないとき、提出前に警告を出すか。
+  checkEmailMatchesId: true,
 
   maxChunkChars: 30,          // 1回の入力でこれを超える文字列が入ったら貼り付けとみなしてブロック
   sendTimeoutMs: 15000,       // 1回の送信を待つ上限(ミリ秒)
@@ -664,6 +667,30 @@ function customConfirm(message){
 }
 
 
+// 学籍番号とメールの「@の前」が一致しないとき警告する（入力ミス・他人の番号の使用に気づくため）。
+// 「戻って修正する」なら false、「このまま提出する」なら true を返す。
+function idEmailMismatch(){
+  if (!CONFIG.checkEmailMatchesId) return false;
+  const sid = $("sid").value.trim().normalize("NFKC").toLowerCase();
+  const local = $("email").value.trim().normalize("NFKC").toLowerCase().split("@")[0];
+  return !!sid && !!local && sid !== local;
+}
+function mismatchConfirm(){
+  return new Promise(resolve => {
+    openModal('<span class="mode-tag bad">確認してください</span><h3>学籍番号とメールアドレスが一致しません</h3>' +
+      '<p class="lead">学籍番号とメールアドレスの「@の前」が一致していません。入力ミスがないか確認してください。</p>' +
+      '<div class="kv"><div><span>学籍番号</span><span>' + esc($("sid").value.trim()) + '</span></div>' +
+      '<div><span>メールアドレス</span><span>' + esc($("email").value.trim()) + '</span></div></div>' +
+      '<div class="warnbox">学籍番号またはメールアドレスの入力ミスは、控えメールが届かない原因になります。' +
+      '間違いがなければ「このまま提出する」を押してください。</div>' +
+      '<div class="btn-row"><button class="btn btn-primary" id="mmFix">戻って修正する</button>' +
+      '<button class="btn btn-ghost" id="mmGo">このまま提出する</button></div>');
+    $("mmFix").onclick = () => { closeModal(); resolve(false); };
+    $("mmGo").onclick  = () => { closeModal(); resolve(true); };
+  });
+}
+
+
 /* ---------- 送信できないときの「メールで送信」 ---------- */
 function buildMail(data){
   const subject = "【メール提出】" + data.assignment + " " + data.studentId + " " + data.name;
@@ -794,7 +821,10 @@ function showSending(data){
 async function submit(){
   if (submitted || submitting) return;
   if (!validate()) return;
-  if (CONFIG.confirmBeforeSubmit &&
+  if (idEmailMismatch()) {
+    // 警告の画面で「このまま提出する」を選んだ場合は、通常の確認は重ねて出さない
+    if (!(await mismatchConfirm())) { $("sid").focus(); return; }
+  } else if (CONFIG.confirmBeforeSubmit &&
       !(await customConfirm("解答を提出します。提出後は編集できません。よろしいですか？"))) return;
 
   saveNow();                                 // 送信前に必ず下書きを確定保存
